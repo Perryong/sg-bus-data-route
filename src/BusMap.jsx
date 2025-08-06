@@ -8,11 +8,25 @@ function BusMap() {
   // Load bus stops in current view
   useEffect(() => {
     const bbox = "103.8,1.3,103.9,1.4"; // Singapore bounds
-    fetch(`/api/bus-stops?bbox=${bbox}&limit=200&format=geojson`)
+    fetch(`https://sg-bus-data-api.vercel.app/api/bus-stops?bbox=${bbox}&limit=200`)
       .then(res => res.json())
       .then(data => {
-        if (data.success && data.data.features) {
-          setBusStops(data.data.features);
+        if (data.success && data.data.stops) {
+          // Convert API response to GeoJSON format
+          const features = Object.entries(data.data.stops).map(([code, stopData]) => ({
+            type: 'Feature',
+            properties: {
+              code: code,
+              name: stopData[2],
+              road: stopData[3],
+              services: [] // API doesn't provide services in this endpoint
+            },
+            geometry: {
+              type: 'Point',
+              coordinates: [stopData[0], stopData[1]]
+            }
+          }));
+          setBusStops(features);
         } else {
           console.error('Failed to load bus stops:', data);
         }
@@ -23,7 +37,7 @@ function BusMap() {
   // Load real-time arrivals for a specific stop
   const loadArrivals = async (stopCode) => {
     try {
-      const response = await fetch(`/api/arrivals?busStopCode=${stopCode}`);
+      const response = await fetch(`https://sg-bus-data-api.vercel.app/api/arrivals?busStopCode=${stopCode}`);
       const data = await response.json();
       if (data.success && data.data.arrivals) {
         setArrivals(prev => ({ ...prev, [stopCode]: data.data.arrivals }));
@@ -51,7 +65,7 @@ function BusMap() {
               <h3>{stop.properties.name}</h3>
               <p>Stop: {stop.properties.code}</p>
               <p>Road: {stop.properties.road}</p>
-              <p>Services: {stop.properties.services.join(', ')}</p>
+              <p>Services: {stop.properties.services.length > 0 ? stop.properties.services.join(', ') : 'No service info available'}</p>
               
               {arrivals[stop.properties.code] && (
                 <div>

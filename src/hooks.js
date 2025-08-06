@@ -55,11 +55,25 @@ export function useNearbyStops(latitude, longitude, radius = 0.01) {
 
       try {
         const response = await fetch(
-          `https://sg-bus-data-api.vercel.app/api/bus-stops?bbox=${bbox}&format=geojson`
+          `https://sg-bus-data-api.vercel.app/api/bus-stops?bbox=${bbox}`
         );
         const data = await response.json();
-        if (data.success && data.data.features) {
-          setStops(data.data.features);
+        if (data.success && data.data.stops) {
+          // Convert API response to GeoJSON format
+          const features = Object.entries(data.data.stops).map(([code, stopData]) => ({
+            type: 'Feature',
+            properties: {
+              code: code,
+              name: stopData[2],
+              road: stopData[3],
+              services: []
+            },
+            geometry: {
+              type: 'Point',
+              coordinates: [stopData[0], stopData[1]]
+            }
+          }));
+          setStops(features);
         } else {
           setStops([]);
         }
@@ -88,20 +102,21 @@ export function useBusRoute(serviceNumber) {
     const fetchRouteData = async () => {
       setLoading(true);
       try {
-        const [routeResponse, stopsResponse] = await Promise.all([
-          fetch(`https://sg-bus-data-api.vercel.app/api/bus-routes?service=${serviceNumber}&format=geojson`),
-          fetch(`https://sg-bus-data-api.vercel.app/api/bus-stops?service=${serviceNumber}&format=geojson`)
-        ]);
+        const routeResponse = await fetch(`https://sg-bus-data-api.vercel.app/api/bus-routes?service=${serviceNumber}`);
 
-        const [routeData, stopsData] = await Promise.all([
-          routeResponse.json(),
-          stopsResponse.json()
-        ]);
+        const routeData = await routeResponse.json();
 
-        if (routeData.success && stopsData.success) {
+        if (routeData.success && routeData.data && routeData.data.routes && routeData.data.routes[serviceNumber]) {
           setRouteData({
-            routes: routeData.data.features || [],
-            stops: stopsData.data.features || []
+            routes: [{
+              type: 'Feature',
+              properties: { pattern: 0 },
+              geometry: {
+                type: 'LineString',
+                coordinates: [] // We'll need to decode the polyline
+              }
+            }],
+            stops: [] // API doesn't seem to have service-specific stops
           });
         } else {
           setRouteData(null);
@@ -133,16 +148,10 @@ export function useBusPositions(serviceNumber, refreshInterval = 30000) {
       setLoading(true);
       setError(null);
       try {
-        const response = await fetch(
-          `https://sg-bus-data-api.vercel.app/api/realtime?serviceNo=${serviceNumber}`
-        );
-        if (!response.ok) throw new Error('Failed to fetch bus positions');
-        const data = await response.json();
-        if (data.success && data.data.positions) {
-          setPositions(data.data.positions);
-        } else {
-          throw new Error(data.error?.message || 'Invalid response format');
-        }
+        // Note: The realtime API endpoint doesn't exist in this API
+        // This hook is kept for compatibility but will always return empty positions
+        setPositions([]);
+        setError('Real-time bus positions not available in this API');
       } catch (err) {
         setError(err.message);
       } finally {

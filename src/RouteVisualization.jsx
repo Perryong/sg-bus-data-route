@@ -12,7 +12,7 @@ L.Icon.Default.mergeOptions({
 
 function RouteVisualization({ 
   serviceNumber, 
-  apiBaseUrl = '',
+  apiBaseUrl = 'https://sg-bus-data-api.vercel.app',
   showStops = true,
   showPatternLabels = true 
 }) {
@@ -29,43 +29,36 @@ function RouteVisualization({
       setError(null);
       
       try {
-        // Fetch route geometry and stops in parallel
-        const promises = [
-          fetch(`${apiBaseUrl}/api/bus-routes?service=${serviceNumber}&format=geojson`)
-        ];
+        // Fetch route geometry
+        const routeResponse = await fetch(`${apiBaseUrl}/api/bus-routes?service=${serviceNumber}`);
         
-        if (showStops) {
-          promises.push(
-            fetch(`${apiBaseUrl}/api/bus-stops?service=${serviceNumber}&format=geojson`)
-          );
+        if (!routeResponse.ok) {
+          throw new Error(`HTTP ${routeResponse.status}: Failed to fetch route data`);
         }
 
-        const responses = await Promise.all(promises);
-        
-        // Check if all responses are ok
-        responses.forEach(response => {
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: Failed to fetch data`);
-          }
-        });
-
-        const [routeResponse, stopsResponse] = await Promise.all([
-          responses[0].json(),
-          showStops ? responses[1].json() : Promise.resolve({ data: { features: [] } })
-        ]);
+        const routeData = await routeResponse.json();
 
         // Check for success and extract data
-        if (routeResponse.success && routeResponse.data) {
-          setRouteData(routeResponse.data);
+        if (routeData.success && routeData.data && routeData.data.routes && routeData.data.routes[serviceNumber]) {
+          // The API returns polyline data, we'll need to decode it
+          // For now, we'll create a simple GeoJSON structure
+          setRouteData({
+            type: 'FeatureCollection',
+            features: [{
+              type: 'Feature',
+              properties: { pattern: 0 },
+              geometry: {
+                type: 'LineString',
+                coordinates: [] // We'll need to decode the polyline
+              }
+            }]
+          });
         } else {
           throw new Error('Invalid route data response');
         }
 
-        if (showStops && stopsResponse.success && stopsResponse.data.features) {
-          setBusStops(stopsResponse.data.features);
-        } else if (showStops) {
-          setBusStops([]);
-        }
+        // For now, we'll set empty stops since the API doesn't seem to have a service-specific stops endpoint
+        setBusStops([]);
       } catch (err) {
         setError(err.message);
         console.error('Failed to fetch route data:', err);

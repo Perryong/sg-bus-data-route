@@ -30,9 +30,11 @@ This directory contains React components that demonstrate how to use the Singapo
 - Auto-refreshes every 30 seconds
 
 ### 🛣️ RouteVisualization
-- Shows complete bus route with stops
+- Shows complete bus route with polylines
 - Enter any bus service number
-- Displays route geometry and all stops
+- Displays decoded route geometry from API
+- Shows both directions of the route
+- Interactive route patterns with popups
 
 ## API Endpoints Used
 
@@ -112,5 +114,14 @@ You can customize the components by:
 - Adjusting refresh intervals
 - Modifying map styles and markers
 - Adding additional features
+
+## Route Visualization Features
+
+The application now properly displays bus routes by:
+- Decoding polyline data from the API using `@mapbox/polyline`
+- Supporting both GeoJSON and JSON API formats
+- Displaying multiple route directions
+- Showing interactive route patterns with detailed popups
+- Handling route data with coordinate validation
 
 See `usage-guide.md` for detailed documentation. 

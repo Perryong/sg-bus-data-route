@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap, Polyline } from 'react-leaflet';
 import L from 'leaflet';
+import polyline from '@mapbox/polyline';
 import config from './config';
 import { isValidBusData } from './utils';
 
@@ -176,9 +177,23 @@ function BusTracker({
       if (routeResponse.ok) {
         const routeData = await routeResponse.json();
         if (routeData.success && routeData.data.routes && routeData.data.routes[serviceNumber]) {
-          // The API returns polyline data, we'll need to decode it
-          // For now, we'll set an empty array since we need a polyline decoder
-          setRoutePath([]);
+          const routeInfo = routeData.data.routes[serviceNumber];
+          const paths = [];
+          
+          // Handle polylines if available
+          if (routeInfo.polylines && Array.isArray(routeInfo.polylines)) {
+            routeInfo.polylines.forEach((polylineString) => {
+              try {
+                // Decode the polyline string to get coordinates
+                const coordinates = polyline.decode(polylineString);
+                paths.push(coordinates);
+              } catch (error) {
+                console.error('Failed to decode polyline:', error);
+              }
+            });
+          }
+          
+          setRoutePath(paths);
         }
       }
       
@@ -395,16 +410,16 @@ function BusTracker({
         
         <AutoBounds arrivals={arrivals} routeStops={routeStops} selectedBus={selectedBus} />
         
-        {/* Route path */}
-        {showRoute && routePath.map((path, index) => (
-          <Polyline
-            key={`route-${index}`}
-            positions={path.map(coord => [coord[1], coord[0]])}
-            color="#1976d2"
-            weight={3}
-            opacity={0.7}
-          />
-        ))}
+                 {/* Route path */}
+         {showRoute && routePath.map((path, index) => (
+           <Polyline
+             key={`route-${index}`}
+             positions={path.map(coord => [coord[0], coord[1]])}
+             color="#1976d2"
+             weight={3}
+             opacity={0.7}
+           />
+         ))}
         
         {/* Bus stop markers */}
         {showRoute && routeStops.map(stop => (

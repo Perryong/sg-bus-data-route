@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, GeoJSON, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
+import polyline from '@mapbox/polyline';
 import config from './config';
 import { calculateBounds } from './utils';
 
@@ -31,8 +32,13 @@ function RouteVisualization({
       setError(null);
       
       try {
-        // Fetch route geometry
-        const routeResponse = await fetch(config.getApiUrl(`/api/bus-routes?service=${serviceNumber}`));
+        // Fetch route geometry - try GeoJSON format first, then fallback to JSON
+        let routeResponse = await fetch(config.getApiUrl(`/api/bus-routes?service=${serviceNumber}&format=geojson`));
+        
+        // If GeoJSON format fails, try regular JSON format
+        if (!routeResponse.ok) {
+          routeResponse = await fetch(config.getApiUrl(`/api/bus-routes?service=${serviceNumber}`));
+        }
         
         if (!routeResponse.ok) {
           throw new Error(`HTTP ${routeResponse.status}: Failed to fetch route data`);
@@ -42,18 +48,58 @@ function RouteVisualization({
 
         // Check for success and extract data
         if (routeData.success && routeData.data && routeData.data.routes && routeData.data.routes[serviceNumber]) {
-          // The API returns polyline data, we'll need to decode it
-          // For now, we'll create a simple GeoJSON structure
+          const routeInfo = routeData.data.routes[serviceNumber];
+          const features = [];
+          
+          // Handle polylines if available
+          if (routeInfo.polylines && Array.isArray(routeInfo.polylines)) {
+            routeInfo.polylines.forEach((polylineString, index) => {
+              try {
+                // Decode the polyline string to get coordinates
+                const coordinates = polyline.decode(polylineString);
+                
+                features.push({
+                  type: 'Feature',
+                  properties: { 
+                    pattern: index,
+                    serviceNo: serviceNumber,
+                    direction: index === 0 ? 'Direction 1' : `Direction ${index + 1}`
+                  },
+                  geometry: {
+                    type: 'LineString',
+                    coordinates: coordinates
+                  }
+                });
+              } catch (error) {
+                console.error(`Failed to decode polyline ${index}:`, error);
+              }
+            });
+          }
+          
+          // If no polylines, try to create routes from stops
+          if (features.length === 0 && routeInfo.stops && Array.isArray(routeInfo.stops)) {
+            routeInfo.stops.forEach((stopSequence, index) => {
+              // For now, we'll create a simple line connecting the stops
+              // In a real implementation, you'd need to fetch stop coordinates
+              features.push({
+                type: 'Feature',
+                properties: { 
+                  pattern: index,
+                  serviceNo: serviceNumber,
+                  direction: index === 0 ? 'Direction 1' : `Direction ${index + 1}`,
+                  stops: stopSequence
+                },
+                geometry: {
+                  type: 'LineString',
+                  coordinates: [] // Will be populated when we have stop coordinates
+                }
+              });
+            });
+          }
+          
           setRouteData({
             type: 'FeatureCollection',
-            features: [{
-              type: 'Feature',
-              properties: { pattern: 0 },
-              geometry: {
-                type: 'LineString',
-                coordinates: [] // We'll need to decode the polyline
-              }
-            }]
+            features: features
           });
         } else {
           throw new Error('Invalid route data response');
@@ -203,13 +249,16 @@ function RouteVisualization({
             style={routeStyle}
             onEachFeature={(feature, layer) => {
               const pattern = feature.properties.pattern;
-              const patternName = pattern === 0 ? 'Direction 1' : `Direction ${pattern + 1}`;
+              const direction = feature.properties.direction || `Direction ${pattern + 1}`;
+              const coordinates = feature.geometry.coordinates;
               
               layer.bindPopup(`
-                <div style="min-width: 150px;">
-                  <strong>Service ${serviceNumber}</strong><br/>
-                  <strong>${patternName}</strong><br/>
-                  <small>Route pattern ${pattern + 1}</small>
+                <div style="min-width: 200px;">
+                  <strong>🚌 Service ${serviceNumber}</strong><br/>
+                  <strong>${direction}</strong><br/>
+                  <small>Route pattern ${pattern + 1}</small><br/>
+                  <small>${coordinates.length} coordinate points</small>
+                  ${feature.properties.stops ? `<br/><small>${feature.properties.stops.length} stops</small>` : ''}
                 </div>
               `);
             }}

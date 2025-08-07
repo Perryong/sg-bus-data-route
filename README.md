@@ -73,6 +73,28 @@ This application handles CORS issues automatically:
 
 The configuration is managed in `src/config.js` and automatically switches based on the environment.
 
+### Deployment on Vercel
+
+To fix CORS issues when deploying on Vercel, you have several options:
+
+#### Option 1: Use Environment Variables (Recommended)
+1. In your Vercel dashboard, go to your project settings
+2. Add an environment variable: `REACT_APP_API_BASE_URL`
+3. Set it to: `https://cors-anywhere.herokuapp.com/https://sg-bus-data-api.vercel.app`
+4. Redeploy your application
+
+#### Option 2: Use a CORS Proxy Service
+You can use services like:
+- `https://cors-anywhere.herokuapp.com/`
+- `https://api.allorigins.win/raw?url=`
+- `https://thingproxy.freeboard.io/fetch/`
+
+#### Option 3: Deploy Your Own Proxy
+Create a simple proxy server that adds CORS headers to your API responses.
+
+### Local Development
+For local development, the app automatically uses relative URLs which work with the development server proxy.
+
 ## Customization
 
 You can customize the components by:

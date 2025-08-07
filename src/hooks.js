@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import config from './config';
 
 // Custom hook for bus arrivals
 export function useBusArrivals(stopCode, refreshInterval = 30000) {
@@ -14,7 +15,7 @@ export function useBusArrivals(stopCode, refreshInterval = 30000) {
       setError(null);
       try {
         const response = await fetch(
-          `https://sg-bus-data-api.vercel.app/api/arrivals?busStopCode=${stopCode}`
+          config.getApiUrl(`/api/arrivals?busStopCode=${stopCode}`)
         );
         if (!response.ok) throw new Error('Failed to fetch arrivals');
         const data = await response.json();
@@ -55,7 +56,7 @@ export function useNearbyStops(latitude, longitude, radius = 0.01) {
 
       try {
         const response = await fetch(
-          `https://sg-bus-data-api.vercel.app/api/bus-stops?bbox=${bbox}`
+          config.getApiUrl(`/api/bus-stops?bbox=${bbox}`)
         );
         const data = await response.json();
         if (data.success && data.data.stops) {
@@ -102,7 +103,7 @@ export function useBusRoute(serviceNumber) {
     const fetchRouteData = async () => {
       setLoading(true);
       try {
-        const routeResponse = await fetch(`https://sg-bus-data-api.vercel.app/api/bus-routes?service=${serviceNumber}`);
+        const routeResponse = await fetch(config.getApiUrl(`/api/bus-routes?service=${serviceNumber}`));
 
         const routeData = await routeResponse.json();
 

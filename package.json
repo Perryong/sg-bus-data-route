@@ -16,7 +16,6 @@
     "react-leaflet": "^4.2.1",
     "leaflet": "^1.9.4"
   },
-  "proxy": "https://sg-bus-data-api.vercel.app",
   "browserslist": {
     "production": [
       ">0.2%",

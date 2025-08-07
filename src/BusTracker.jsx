@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap, Polyline } from 'react-leaflet';
 import L from 'leaflet';
+import config from './config';
 
 // Custom bus icon that rotates based on bearing
 const createBusIcon = (bearing = 0, type = 'SD', isSelected = false) => {
@@ -103,7 +104,7 @@ function AutoBounds({ arrivals, routeStops, selectedBus }) {
 function BusTracker({ 
   serviceNumber, 
   busStopCode,
-  apiBaseUrl = 'https://sg-bus-data-api.vercel.app',
+  apiBaseUrl = '',
   refreshInterval = 30000,
   showRoute = true 
 }) {
@@ -126,7 +127,7 @@ function BusTracker({
     
     try {
       const response = await fetch(
-        `${apiBaseUrl}/api/arrivals?busStopCode=${busStopCode}`,
+        config.getApiUrl(`/api/arrivals?busStopCode=${busStopCode}`),
         { 
           headers: {
             'Cache-Control': 'no-cache'
@@ -166,7 +167,7 @@ function BusTracker({
     try {
       // Fetch route path
       const routeResponse = await fetch(
-        `${apiBaseUrl}/api/bus-routes?service=${serviceNumber}`
+        config.getApiUrl(`/api/bus-routes?service=${serviceNumber}`)
       );
       
       if (routeResponse.ok) {

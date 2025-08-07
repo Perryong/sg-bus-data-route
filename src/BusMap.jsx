@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import config from './config';
 
 function BusMap() {
   const [busStops, setBusStops] = useState([]);
@@ -8,7 +9,7 @@ function BusMap() {
   // Load bus stops in current view
   useEffect(() => {
     const bbox = "103.8,1.3,103.9,1.4"; // Singapore bounds
-    fetch(`https://sg-bus-data-api.vercel.app/api/bus-stops?bbox=${bbox}&limit=200`)
+    fetch(config.getApiUrl(`/api/bus-stops?bbox=${bbox}&limit=200`))
       .then(res => res.json())
       .then(data => {
         if (data.success && data.data.stops) {
@@ -37,7 +38,7 @@ function BusMap() {
   // Load real-time arrivals for a specific stop
   const loadArrivals = async (stopCode) => {
     try {
-      const response = await fetch(`https://sg-bus-data-api.vercel.app/api/arrivals?busStopCode=${stopCode}`);
+      const response = await fetch(config.getApiUrl(`/api/arrivals?busStopCode=${stopCode}`));
       const data = await response.json();
       if (data.success && data.data.arrivals) {
         setArrivals(prev => ({ ...prev, [stopCode]: data.data.arrivals }));

@@ -63,6 +63,15 @@ The `hooks.js` file provides reusable hooks:
 - **No buses showing?** Some services may not be operating at certain times
 - **Map not loading?** Check your internet connection
 - **API errors?** The LTA API may be temporarily unavailable
+- **CORS errors?** The application automatically handles CORS for both development and production environments
+
+## CORS Configuration
+
+This application handles CORS issues automatically:
+- **Development:** Uses relative URLs that work with the development server
+- **Production:** Uses full API URLs with proper CORS headers
+
+The configuration is managed in `src/config.js` and automatically switches based on the environment.
 
 ## Customization
 

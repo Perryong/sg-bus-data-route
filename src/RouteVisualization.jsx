@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, GeoJSON, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
+import config from './config';
 
 // Fix for default markers in react-leaflet
 delete L.Icon.Default.prototype._getIconUrl;
@@ -12,7 +13,7 @@ L.Icon.Default.mergeOptions({
 
 function RouteVisualization({ 
   serviceNumber, 
-  apiBaseUrl = 'https://sg-bus-data-api.vercel.app',
+  apiBaseUrl = '',
   showStops = true,
   showPatternLabels = true 
 }) {
@@ -30,7 +31,7 @@ function RouteVisualization({
       
       try {
         // Fetch route geometry
-        const routeResponse = await fetch(`${apiBaseUrl}/api/bus-routes?service=${serviceNumber}`);
+        const routeResponse = await fetch(config.getApiUrl(`/api/bus-routes?service=${serviceNumber}`));
         
         if (!routeResponse.ok) {
           throw new Error(`HTTP ${routeResponse.status}: Failed to fetch route data`);

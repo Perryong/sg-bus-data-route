@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap, Polyline } from 'react-leaflet';
 import L from 'leaflet';
 import config from './config';
+import { isValidBusData } from './utils';
 
 // Custom bus icon that rotates based on bearing
 const createBusIcon = (bearing = 0, type = 'SD', isSelected = false) => {
@@ -80,7 +81,7 @@ function AutoBounds({ arrivals, routeStops, selectedBus }) {
       // Add bus positions
       arrivals.forEach(arrival => {
         arrival.buses.forEach(bus => {
-          if (bus.latitude && bus.longitude) {
+          if (isValidBusData(bus)) {
             coords.push([bus.latitude, bus.longitude]);
           }
         });
@@ -88,7 +89,9 @@ function AutoBounds({ arrivals, routeStops, selectedBus }) {
       
       // Add route stops
       routeStops.forEach(stop => {
-        coords.push([stop.latitude, stop.longitude]);
+        if (isValidBusData(stop)) {
+          coords.push([stop.latitude, stop.longitude]);
+        }
       });
       
       if (coords.length > 0) {

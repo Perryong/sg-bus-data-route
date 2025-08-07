@@ -64,6 +64,7 @@ The `hooks.js` file provides reusable hooks:
 - **Map not loading?** Check your internet connection
 - **API errors?** The LTA API may be temporarily unavailable
 - **CORS errors?** The application automatically handles CORS for both development and production environments
+- **Map coordinate errors?** The application includes robust coordinate validation to prevent invalid map bounds
 
 ## CORS Configuration
 

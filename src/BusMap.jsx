@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import config from './config';
+import { isValidStopData } from './utils';
 
 function BusMap() {
   const [busStops, setBusStops] = useState([]);
@@ -14,19 +15,21 @@ function BusMap() {
       .then(data => {
         if (data.success && data.data.stops) {
           // Convert API response to GeoJSON format
-          const features = Object.entries(data.data.stops).map(([code, stopData]) => ({
-            type: 'Feature',
-            properties: {
-              code: code,
-              name: stopData[2],
-              road: stopData[3],
-              services: [] // API doesn't provide services in this endpoint
-            },
-            geometry: {
-              type: 'Point',
-              coordinates: [stopData[0], stopData[1]]
-            }
-          }));
+          const features = Object.entries(data.data.stops)
+            .filter(([code, stopData]) => isValidStopData(stopData))
+            .map(([code, stopData]) => ({
+              type: 'Feature',
+              properties: {
+                code: code,
+                name: stopData[2],
+                road: stopData[3],
+                services: [] // API doesn't provide services in this endpoint
+              },
+              geometry: {
+                type: 'Point',
+                coordinates: [stopData[0], stopData[1]]
+              }
+            }));
           setBusStops(features);
         } else {
           console.error('Failed to load bus stops:', data);

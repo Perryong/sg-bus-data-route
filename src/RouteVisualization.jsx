@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, GeoJSON, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import config from './config';
+import { calculateBounds } from './utils';
 
 // Fix for default markers in react-leaflet
 delete L.Icon.Default.prototype._getIconUrl;
@@ -156,17 +157,12 @@ function RouteVisualization({
     );
   }
 
-  // Calculate map bounds
+  // Calculate map bounds using utility function
   const allCoordinates = routeData.features.flatMap(feature => 
     feature.geometry.coordinates
   );
-  const lats = allCoordinates.map(coord => coord[1]);
-  const lngs = allCoordinates.map(coord => coord[0]);
   
-  const bounds = [
-    [Math.min(...lats), Math.min(...lngs)],
-    [Math.max(...lats), Math.max(...lngs)]
-  ];
+  const bounds = calculateBounds(allCoordinates);
 
   return (
     <div style={{ height: '500px', width: '100%', border: '1px solid #ddd', borderRadius: '8px', overflow: 'hidden' }}>
